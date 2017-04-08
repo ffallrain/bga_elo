@@ -6,7 +6,7 @@ import math
 import matplotlib.pyplot as plt
 
 N_p = 100
-K = 40
+K = 20
 
 Strength_Scale = 120
 
@@ -128,6 +128,25 @@ def simulate( N ):
             break
 
 plt.figure(figsize=(9,9) )
+if False:
+    N = 1000000
+    avgs = list()
+    games = range(N)
+    new_elo_of_2000 = list()
+    for i in games :
+        one_game()
+        avgs.append( avg_elo() )
+        if i%10000 == 0 :
+            balance()
+        if (i+1)%100000 == 0 :
+            A = np.vstack( [istrength, np.ones(len(istrength))] ).T
+            m,c = np.linalg.lstsq(A,elo)[0]
+            y = m * 2000 + c 
+            new_elo_of_2000.append(y)
+
+    plt.plot(new_elo_of_2000)
+    plt.show()
+
 if True:
     N = 500000
     avgs = list()
@@ -135,24 +154,24 @@ if True:
     for i in games :
         one_game()
         avgs.append( avg_elo() )
-        if i%1000 == 0 :
+        if i%10001 == 0 :
             balance()
 
 
-    plt.scatter( istrength,elo, color = 'g' , alpha = 0.5, label = "%d games played "%N )
+    plt.scatter( istrength,elo-1300, color = 'g' , alpha = 0.5,s=50, label = "%d games played "%N )
 
     ## plot linear fit
     A = np.vstack( [istrength, np.ones(len(istrength))] ).T
-    m,c = np.linalg.lstsq(A,elo)[0]
+    m,c = np.linalg.lstsq(A,elo-1300)[0]
     x = np.linspace(1000,2200,1000)
     y = m*x+c
-    plt.plot(x,y,color = 'g' ,label="y = %g*x%+g"%(m,c) ,linewidth=2)
+    plt.plot(x,y,color = 'b' ,label="y = %.3g*x%+.3g"%(m,c) ,linewidth=2)
 
-    plt.legend(loc='best')
-    plt.xlabel("Intrinsic Elo")
-    plt.ylabel("Simulated Elo")
+    plt.legend(loc='upper left')
+    plt.xlabel("x: Old elo",fontsize='xx-large')
+    plt.ylabel("y: New elo",fontsize='xx-large')
     plt.xlim( (1000,2100) )
-    plt.ylim( (1000,2100) )
+    # plt.ylim( (1000,2100) )
 
     plt.show()
 

@@ -6,7 +6,7 @@ import math
 import matplotlib.pyplot as plt
 
 N_p = 100
-K = 40
+K = 20
 
 Strength_Scale = 120
 
