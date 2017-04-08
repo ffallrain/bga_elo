@@ -12,30 +12,23 @@ Strength_Scale = 120
 
 players = np.array( range( N_p ) )
 
-if False: 
-    istrength = np.zeros( (N_p,) ) 
+if True: 
+    istrength = np.array ( open("players_elo.data"  ).readlines(), dtype=np.float32 )
+    elo       = np.array ( open("simulated_elo.data").readlines(), dtype=np.float32 )
     for i in players:
-        istrength[i] = rd.gauss(0,1.5) 
-    avg = np.mean(istrength)
-    istrength = (istrength - avg )*Strength_Scale + 1500
+        if elo[i] < 1300 :
+            elo[i] = 1300 
 
-    ## log data
-    ofp = open("players_elo.data",'w')
-    for i in players:
-        ofp.write("%g\n"%istrength[i])
-    ofp.close()
+boyelo = 1200
+boyistrength = 1987.05
 
-else:
-    istrength = np.array ( open("players_elo.data").readlines(), dtype=np.float32 )
+def run(j):
 
-# istrength = [ -1,1 ]
-
-elo = np.zeros( (N_p,) ) + 1500
-
-def run(i,j):
+    global boyelo
+    global boyistrength
 
     ## Expectation
-    p_iwin = 1.0/( 1+10**((istrength[j]-istrength[i])/400) )
+    p_iwin = 1.0/( 1+10**( (istrength[j]-boyistrength)/400 ) )
 
     ## Simulation
     dice = rd.random()
@@ -47,12 +40,25 @@ def run(i,j):
         resulti,resultj = 0.5, 0.5   # Draw
 
     ## Analysis result
-    pelo_iwin = 1.0/( 1+10**( (elo[j]-elo[i])/400 ) )
+    pelo_iwin = 1.0/( 1+10**( (elo[j]-boyelo)/400 ) )
     diff = K*(resulti-pelo_iwin)
-    elo[i] = elo[i] + diff
-    elo[j] = elo[j] - diff
+    
+    if boyelo < 1300 and diff < 0 :
+        pass
+    elif boyelo > 1300 and boyelo + diff < 1300 :
+        boyelo = 1300 
+    else:
+        boyelo = boyelo + diff
 
-    return (diff,  )
+    diff = - diff
+    if elo[j] < 1300 and diff < 0 :
+        pass
+    elif elo[j] > 1300 and elo[j] + diff < 1300 :
+        elo[j] = 1300 
+    else:
+        elo[j] = elo[j] + diff
+
+    return 
     
 
 def one_game():
@@ -60,29 +66,20 @@ def one_game():
     global total_count 
 
     ## random pick P
-    i,j = rd.sample(players,2)
+    j = rd.sample(players,1)
 
     ## would the g played?
     if True:
         if True: # exponent
             dice = rd.random()
-            diff_strength = abs(elo[i]-elo[j])
+            diff_strength = abs(boyelo-elo[j])
             criteria = math.exp( - diff_strength / 200. )
             if dice <= criteria :
                 flag = True
             else:
                 flag = False
-        else:
-            diff_strength = abs(elo[i]-elo[j])
-            if diff_strength > 200 :
-                flag = False
-            else:
-                flag = True
-            
-    else:
-        flag = True
     
-    result = run(i,j)
+    result = run(j)
 
     ## output
     if flag:
@@ -101,16 +98,10 @@ if True: ## main
     plt.figure(figsize=(9,9) )
 
     colors = ['g','r','b','black','purple']
-    for i in (200000, ):
+    total_count = 0
+    for i in (20,20,20,40,40, ):
         color = colors.pop(0)
-        total_count = 0
         simulate( i )
-        
-        ## log simulated elo
-        ofp = open("simulated_elo.data",'w')
-        for i in players:
-            ofp.write("%g\n"%elo[i])
-        ofp.close()
         
         ## plot elo
         plt.scatter( istrength,elo, color = color , alpha = 0.5, label = "%d games played "%total_count )
@@ -121,6 +112,9 @@ if True: ## main
         x = np.linspace(1000,2200,1000)
         y = m*x+c
         plt.plot(x,y,color = color ,label="y = %g*x%+g"%(m,c) ,linewidth=2)
+
+        ## plot boy
+        plt.scatter( (boyistrength,), (boyelo,), color = 'red', s = 100 , alpha = 0.5, )
 
     plt.legend(loc='best')
     plt.xlabel("Intrinsic Elo")
